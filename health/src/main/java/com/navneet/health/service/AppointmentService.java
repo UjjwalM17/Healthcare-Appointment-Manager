@@ -105,14 +105,45 @@ public class AppointmentService {
             System.err.println("Calendar event creation failed: " + e.getMessage());
         }
         // Generate AI pre-visit summary
+//        try {
+//            if (savedAppointment.getSymptoms() != null && !savedAppointment.getSymptoms().isEmpty()) {
+//                String summary = aiService.generatePreVisitSummary(savedAppointment.getSymptoms());
+//                savedAppointment.setPreVisitSummary(summary);
+//                appointmentRepository.save(savedAppointment);
+//            }
+//        } catch (Exception e) {
+//            System.err.println("AI pre-visit summary failed: " + e.getMessage());
+//        }
+
         try {
-            if (savedAppointment.getSymptoms() != null && !savedAppointment.getSymptoms().isEmpty()) {
-                String summary = aiService.generatePreVisitSummary(savedAppointment.getSymptoms());
+            System.out.println("========== AI PRE-VISIT START ==========");
+
+            System.out.println("Symptoms: " + savedAppointment.getSymptoms());
+
+            if (savedAppointment.getSymptoms() != null
+                    && !savedAppointment.getSymptoms().isEmpty()) {
+
+                System.out.println("Calling Groq...");
+
+                String summary = aiService.generatePreVisitSummary(
+                        savedAppointment.getSymptoms()
+                );
+
+                System.out.println("Groq returned: " + summary);
+
                 savedAppointment.setPreVisitSummary(summary);
                 appointmentRepository.save(savedAppointment);
+
+                System.out.println("AI summary saved successfully.");
+            } else {
+                System.out.println("NO SYMPTOMS PROVIDED.");
             }
+
+            System.out.println("========== AI PRE-VISIT END ==========");
+
         } catch (Exception e) {
-            System.err.println("AI pre-visit summary failed: " + e.getMessage());
+            System.err.println("AI pre-visit summary failed:");
+            e.printStackTrace();
         }
 
         return appointmentRepository.findById(savedAppointment.getId()).orElse(savedAppointment);

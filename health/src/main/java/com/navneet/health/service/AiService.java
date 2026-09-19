@@ -43,8 +43,10 @@ public class AiService {
 
                 """ + symptoms;
 
-        return generate(prompt,
-                "Pre-visit summary unavailable.");
+        return generate(
+                prompt,
+                "Pre-visit summary unavailable."
+        );
     }
 
     public String generatePostVisitSummary(String doctorNotes) {
@@ -69,18 +71,27 @@ public class AiService {
 
                 """ + doctorNotes;
 
-        return generate(prompt,
-                "Post-visit summary unavailable.");
+        return generate(
+                prompt,
+                "Post-visit summary unavailable."
+        );
     }
 
-    private String generate(String prompt,
-                            String fallback) {
+    private String generate(String prompt, String fallback) {
 
         try {
             return callGroq(prompt);
+
         } catch (RestClientException ex) {
+            System.err.println(
+                    "Groq API error: " + ex.getMessage()
+            );
             return fallback;
+
         } catch (Exception ex) {
+            System.err.println(
+                    "AI generation error: " + ex.getMessage()
+            );
             return fallback;
         }
     }
@@ -125,7 +136,14 @@ public class AiService {
         Choice choice =
                 response.getChoices().get(0);
 
+        if (choice.getMessage() == null
+                || choice.getMessage().getContent() == null) {
+
+            throw new RuntimeException(
+                    "Invalid response received from Groq."
+            );
+        }
+
         return choice.getMessage().getContent();
     }
-
 }
