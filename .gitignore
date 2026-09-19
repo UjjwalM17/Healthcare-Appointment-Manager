@@ -1,3 +1,2 @@
-echo tokens/ > .gitignore
-echo health/src/main/resources/application.properties >> .gitignore
-echo health/src/main/resources/credentials.json >> .gitignoretokens/
+tokens/
+health/src/main/resources/credentials.json
