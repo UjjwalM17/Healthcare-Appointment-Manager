@@ -75,6 +75,10 @@ public class DoctorService {
         return doctorRepository.findBySpecialization(specialization);
     }
 
+    public List<Doctor> getAllDoctors() {
+        return doctorRepository.findAll();
+    }
+
     public List<LocalTime> getAvailableSlots(Long doctorId, LocalDate date) {
 
         Doctor doctor = doctorRepository.findById(doctorId)

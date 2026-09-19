@@ -38,7 +38,10 @@ public class DoctorController {
 
     @GetMapping("/doctors")
     public ResponseEntity<List<Doctor>> getDoctorsBySpecialization(
-            @RequestParam String specialization) {
+            @RequestParam(required = false) String specialization) {
+        if (specialization == null || specialization.trim().isEmpty()) {
+            return ResponseEntity.ok(doctorService.getAllDoctors());
+        }
         return ResponseEntity.ok(doctorService.getDoctorsBySpecialization(specialization));
     }
 
