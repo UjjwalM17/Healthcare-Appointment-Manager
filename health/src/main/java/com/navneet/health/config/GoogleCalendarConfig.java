@@ -11,12 +11,22 @@ import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.CalendarScopes;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.io.FileReader;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 
@@ -33,6 +43,7 @@ public class GoogleCalendarConfig {
             Collections.singletonList(CalendarScopes.CALENDAR);
 
     @Bean
+    @ConditionalOnProperty(name = "google.calendar.enabled", havingValue = "true", matchIfMissing = false)
     public Calendar googleCalendarService()
             throws GeneralSecurityException, IOException {
 
@@ -40,25 +51,57 @@ public class GoogleCalendarConfig {
         var jsonFactory = GsonFactory.getDefaultInstance();
 
         GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(
-                jsonFactory, new java.io.InputStreamReader(
-                        new org.springframework.core.io.ClassPathResource("credentials.json")
-                                .getInputStream()));
+                jsonFactory, new InputStreamReader(credentialsStream()));
+
+        String resolvedTokensPath = tokensPath;
+
+        String tokenBase64 = System.getenv("GOOGLE_CALENDAR_TOKEN");
+        if (tokenBase64 != null && !tokenBase64.isBlank()) {
+            Path tokenDir = Paths.get("/tmp/tokens");
+            Files.createDirectories(tokenDir);
+            byte[] tokenBytes = Base64.getDecoder().decode(tokenBase64.trim());
+            Files.write(tokenDir.resolve("StoredCredential"), tokenBytes);
+            resolvedTokensPath = "/tmp/tokens";
+        }
+
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
                 httpTransport, jsonFactory, clientSecrets, SCOPES)
-                .setDataStoreFactory(new FileDataStoreFactory(
-                        new java.io.File(tokensPath)))
+                .setDataStoreFactory(new FileDataStoreFactory(new File(resolvedTokensPath)))
                 .setAccessType("offline")
                 .build();
 
-        LocalServerReceiver receiver = new LocalServerReceiver.Builder()
-                .setPort(8888)
-                .build();
-
-        Credential credential = new AuthorizationCodeInstalledApp(
-                flow, receiver).authorize("user");
+        Credential credential = flow.loadCredential("user");
+        if (credential == null) {
+            LocalServerReceiver receiver = new LocalServerReceiver.Builder()
+                    .setPort(8888)
+                    .build();
+            credential = new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
+        }
 
         return new Calendar.Builder(httpTransport, jsonFactory, credential)
                 .setApplicationName("Healthcare App")
                 .build();
+    }
+
+    private InputStream credentialsStream() throws IOException {
+        String envJson = System.getenv("GOOGLE_CALENDAR_CREDENTIALS");
+        if (envJson != null && !envJson.isBlank()) {
+            return new ByteArrayInputStream(envJson.getBytes(StandardCharsets.UTF_8));
+        }
+        String envB64 = System.getenv("GOOGLE_CALENDAR_CREDENTIALS_BASE64");
+        if (envB64 != null && !envB64.isBlank()) {
+            return new ByteArrayInputStream(Base64.getDecoder().decode(envB64.trim()));
+        }
+        var classpath = new org.springframework.core.io.ClassPathResource("credentials.json");
+        if (classpath.exists()) {
+            return classpath.getInputStream();
+        }
+        Path path = Paths.get(credentialsPath);
+        if (Files.exists(path)) {
+            return Files.newInputStream(path);
+        }
+        throw new FileNotFoundException(
+                "Google Calendar credentials missing. Set GOOGLE_CALENDAR_CREDENTIALS, "
+                        + "or set GOOGLE_CALENDAR_ENABLED=false");
     }
 }
