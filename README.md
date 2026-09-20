@@ -1,350 +1,266 @@
-# Healthcare Appointment & Follow-up Manager
+# 🏥 Healthcare Appointment & AI Clinical Triage Manager
 
-A full-stack clinic management platform with separate portals for patients, doctors, and admins. Patients book appointments and share symptoms in advance. An AI generates a pre-visit summary with urgency level for the doctor. After the visit, the doctor submits notes and the AI generates a patient-friendly post-visit summary. Both sides receive email confirmations and Google Calendar events.
+[![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://www.oracle.com/java/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-18.x-61dafb.svg)](https://react.dev/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-blue.svg)](https://www.postgresql.org/)
+[![Groq AI](https://img.shields.io/badge/Groq%20AI-GPT--OSS--20B-purple.svg)](https://groq.com/)
+[![Google Calendar](https://img.shields.io/badge/Google%20Calendar-v3%20API-4285F4.svg)](https://developers.google.com/calendar)
+[![Brevo](https://img.shields.io/badge/Brevo-Email%20API-0092FF.svg)](https://www.brevo.com/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
----
-
-## Tech Stack
-
-- **Backend**: Java 17, Spring Boot 4.1.0, Spring Security, Spring Data JPA
-- **Database**: PostgreSQL 18
-- **Authentication**: JWT (jjwt 0.12.6)
-- **AI**: Groq API (llama-3.3-70b-versatile)
-- **Email**: Brevo (Sendinblue) REST API
-- **Calendar**: Google Calendar API v3 with OAuth 2.0
-- **Frontend**: React 18, Vite, Axios
-- **Build Tool**: Maven
+An enterprise-grade, full-stack healthcare management platform engineered to eliminate clinical bottlenecks, prevent scheduling conflicts, and deliver automated diagnostic preparation. Built with **Spring Boot 4**, **React**, **PostgreSQL**, and powered by **Groq Cloud LLMs**, **Google Calendar API**, and **Brevo Transactional Email**.
 
 ---
 
-## Project Structure
+## 👨‍💻 Author & Repository
+
+* **Developer**: Ujjwal Manocha
+* **GitHub**: [@UjjwalM17](https://github.com/UjjwalM17)
+* **Repository**: [Healthcare-Appointment-Manager](https://github.com/UjjwalM17/Healthcare-Appointment-Manager)
+* **Backend Production API**: `https://healthcare-appointment-manager-2-wnyt.onrender.com`
+
+---
+
+## 📌 Problem Statement & Solution
+
+### The Challenge
+Traditional healthcare booking systems suffer from critical operational inefficiencies:
+1. **Administrative Overload & Double-Booking**: Manual slot management frequently causes overlapping appointments and doctor schedule conflicts.
+2. **Unprepared Consultations**: Doctors meet patients without prior clinical triage, spending 30–50% of the consultation extracting basic symptom history.
+3. **Fragmented Communication**: Appointments exist in isolated databases without syncing to personal schedules or delivering reliable transactional notifications.
+
+### The Solution
+The **Healthcare Appointment Manager** solves these issues through an end-to-end automated platform:
+* **Real-time Slot Booking**: Conflict-free slot reservation powered by PostgreSQL partial unique indexes.
+* **AI Clinical Pre-Visit Triage**: Real-time analysis of patient symptoms using Groq LLMs (`openai/gpt-oss-20b`) to classify urgency (Low/Medium/High/Emergency), extract chief complaints, and generate 3 targeted diagnostic questions for the physician.
+* **Doctor Calendar Sync**: Automated server-to-server synchronization with Google Calendar via Service Account.
+* **Transactional Notifications**: Instant styled HTML booking confirmations and doctor alerts dispatched via Brevo REST API.
+* **Post-Visit Patient Summaries**: Doctors enter clinical notes; AI converts complex medical jargon into plain-language instructions with medication schedules and lifestyle advice.
+
+---
+
+## 🏛️ System Architecture
 
 ```
-care/
-├── health/                         # Spring Boot backend
-│   └── src/main/java/com/navneet/health/
-│       ├── config/                 # JWT, Security, Google Calendar config
-│       ├── controller/             # REST API endpoints
-│       ├── dto/groq/               # Groq API request/response DTOs
-│       ├── entity/                 # JPA entities (User, Doctor, Appointment, Prescription)
-│       ├── repository/             # Spring Data JPA interfaces
-│       └── service/                # Business logic, AI, Email, Calendar, Reminders
-└── frontend/                       # React frontend
-    └── src/
-        ├── pages/                  # Login, Register, PatientDashboard, DoctorDashboard, AdminDashboard
-        └── services/               # Axios API client
+                                  +---------------------------------------+
+                                  |     React / Vite Client (Vercel)      |
+                                  |  (Patient, Doctor, Admin Dashboards)  |
+                                  +---------------------------------------+
+                                                      |
+                                           HTTPS / REST (JWT Auth)
+                                                      v
+                                  +---------------------------------------+
+                                  |    Spring Boot 4.1.0 Backend (Render) |
+                                  |     - Spring Security & JWT Filter    |
+                                  |     - Slot & Booking Service          |
+                                  |     - Spring Data JPA / Hibernate     |
+                                  +---------------------------------------+
+                                     /             |             \
+            +-----------------------+              |              +-----------------------+
+            |                                      |                                      |
+            v                                      v                                      v
++------------------------+      +------------------------+      +-------------------------------+
+|  PostgreSQL Database   |      |    Groq Cloud LLM      |      |  Cloud Notification Pipeline  |
+|  - Managed on Render   |      |  - openai/gpt-oss-20b  |      |  - Google Calendar v3 API     |
+|  - Relational Schema   |      |  - Triage & Summaries  |      |  - Brevo Transactional Email  |
++------------------------+      +------------------------+      +-------------------------------+
 ```
 
 ---
 
-## Prerequisites
+## 🚀 Key Features
 
-- Java 17+
-- Maven 3.8+
-- PostgreSQL 18
-- Node.js 22+
-- A Groq API key (free at console.groq.com)
-- A Brevo API key (free at brevo.com)
-- A Google Cloud project with Calendar API enabled
+### 1. Patient Portal
+* **Doctor Discovery**: Filter physicians by medical specialization (Cardiology, Dermatology, Neurology, etc.).
+* **Live Slot Reservation**: Select available dates and dynamically generated 30-minute time slots.
+* **Symptom Reporting**: Describe ailments in advance to initiate automated pre-visit triage.
+* **Appointment Tracking**: View status (`CONFIRMED`, `PENDING`, `CANCELLED`) and doctor's post-visit instructions.
+
+### 2. Doctor Portal
+* **Schedule Management**: Set working hours and slot durations.
+* **Leave Management**: Mark leave dates to automatically block appointment bookings.
+* **Pre-Visit Clinical Intelligence**: Review AI-generated urgency rating, chief complaint, and recommended diagnostic questions prior to patient consultation.
+* **Consultation Notes & Prescriptions**: Submit clinical findings and generate patient-friendly summaries.
+
+### 3. Administrator Portal
+* **Practitioner Onboarding**: Create and manage doctor profiles and specialties.
+* **System Monitoring**: View all registered patients, active appointments, and clinic analytics.
+
+### 4. Advanced Integrations
+* **Groq AI Engine**: Sub-second LLM inference with automatic fallback chains across multiple candidate models (`openai/gpt-oss-20b`, `openai/gpt-oss-120b`, `qwen/qwen3.8-27b`).
+* **Google Calendar Service Account**: Seamless event insertion with automatic fallback for service-account attendee constraints.
+* **Brevo Transactional Email**: High-deliverability HTML cards for booking confirmations, cancellations, and doctor notifications.
 
 ---
 
-## Setup Guide
+## 🛠️ Technology Stack
 
-### 1. Database
+| Layer | Technology | Details |
+| :--- | :--- | :--- |
+| **Backend Framework** | Java 17 / Spring Boot 4.1.0 | REST API, Spring Security, Spring Data JPA |
+| **Authentication** | JWT (`jjwt-api 0.12.6`) | Stateless Bearer token authentication & BCrypt hashing |
+| **Database** | PostgreSQL 18 | Hosted on Render with custom partial indexes |
+| **AI / LLM** | Groq Cloud API | `openai/gpt-oss-20b` with multi-model fallback |
+| **Calendar Sync** | Google Calendar API v3 | Google Cloud Service Account (Server-to-Server) |
+| **Email Service** | Brevo REST API v3 | Transactional SMTP API with responsive HTML templates |
+| **Frontend** | React 18, Vite, Axios | Tailwind CSS, responsive single-page architecture |
+| **Deployment** | Render & Vercel | Render (Spring Boot & PostgreSQL), Vercel (React Frontend) |
 
-Open pgAdmin and create a database:
+---
 
+## 📂 Project Structure
+
+```
+Healthcare-Appointment-Manager/
+├── health/                               # Spring Boot Backend Application
+│   ├── src/main/java/com/navneet/health/
+│   │   ├── config/                       # Security, JWT, CORS, Google Calendar configs
+│   │   ├── controller/                   # REST Endpoints (Auth, Doctor, Appointment, Admin)
+│   │   ├── dto/                          # Data Transfer Objects (Groq, Auth, Requests)
+│   │   ├── entity/                       # JPA Entities (User, Doctor, Appointment, etc.)
+│   │   ├── repository/                   # Spring Data JPA Repositories
+│   │   └── service/                      # Business Services (AiService, CalenderService, EmailService)
+│   ├── src/main/resources/
+│   │   ├── application.properties        # Application configuration & secrets
+│   │   └── service-account.json          # Google Cloud Service Account credentials
+│   └── pom.xml                           # Maven dependencies
+├── frontend/                             # React / Vite Frontend Application
+│   ├── src/
+│   │   ├── components/                   # Reusable UI components
+│   │   ├── pages/                        # Patient, Doctor, Admin dashboards & Auth views
+│   │   └── services/                     # Axios API integration
+│   ├── package.json                      # Frontend dependencies
+│   └── vite.config.js                    # Vite build configuration
+└── README.md                             # Project documentation
+```
+
+---
+
+## ⚙️ Local Development Setup
+
+### 1. Prerequisites
+* **JDK 17+** installed
+* **Maven 3.8+** installed
+* **Node.js 18+** & npm installed
+* **PostgreSQL 15+** running locally or in cloud
+
+### 2. Database Configuration
+Create the PostgreSQL database:
 ```sql
 CREATE DATABASE healthdb;
 ```
 
-After running the app once (Hibernate creates tables automatically), run this index for double-booking prevention:
-
+Run the partial unique index to guarantee double-booking prevention:
 ```sql
 CREATE UNIQUE INDEX uq_doctor_slot_active
 ON appointment (doctor_id, appointment_date, appointment_time)
 WHERE status <> 'CANCELLED';
 ```
 
-Also alter text columns to avoid 255 character limit:
+### 3. Backend Setup
+1. Navigate to the backend directory:
+   ```bash
+   cd health
+   ```
+2. Configure environment variables or edit `src/main/resources/application.properties`:
+   ```properties
+   # Database Configuration
+   spring.datasource.url=jdbc:postgresql://localhost:5432/healthdb
+   spring.datasource.username=postgres
+   spring.datasource.password=your_password
+   spring.jpa.hibernate.ddl-auto=update
 
-```sql
-ALTER TABLE appointment
-ALTER COLUMN pre_visit_summary TYPE TEXT,
-ALTER COLUMN post_visit_summary TYPE TEXT,
-ALTER COLUMN symptoms TYPE TEXT,
-ALTER COLUMN doctor_notes TYPE TEXT;
-```
+   # Server Port
+   server.port=8081
 
-### 2. Backend Configuration
+   # JWT Security
+   jwt.secret=your_base64_or_hex_jwt_secret_key_minimum_256_bits
+   jwt.expiration=86400000
 
-Copy `.env.example` to `application.properties` and fill in your values:
+   # Groq AI Service
+   groq.api.key=your_groq_api_key
+   groq.api.url=https://api.groq.com/openai/v1/chat/completions
+   groq.model=openai/gpt-oss-20b
 
-```
-src/main/resources/application.properties
-```
+   # Brevo Email Service
+   brevo.api.key=your_brevo_api_key
+   brevo.from.email=your_verified_brevo_email@domain.com
+   brevo.from.name=Healthcare Appointment Manager
 
-### 3. Google Calendar Setup
+   # Google Calendar Service Account
+   google.calendar.service-account.json={"type":"service_account",...}
+   google.calendar.calendar-id=your_doctor_calendar@gmail.com
+   ```
+3. Run the Spring Boot application:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+   Backend will start at `http://localhost:8081`.
 
-- Go to console.cloud.google.com
-- Create a project named "Healthcare System"
-- Enable the Google Calendar API
-- Go to APIs & Services → Credentials → Create OAuth 2.0 Client ID
-- Application type: Web application
-- Add authorized redirect URI: `http://localhost:8888/Callback`
-- Download the JSON file and rename it `credentials.json`
-- Place it in `src/main/resources/credentials.json`
-- Go to OAuth consent screen → Test users → add your Gmail account
-- On first run, a browser window opens for authorization — log in and allow access
-- Tokens are saved to the `tokens/` folder automatically
-
-### 4. Run the Backend
-
-```bash
-cd health
-./mvnw spring-boot:run
-```
-
-App starts on `http://localhost:8081`
-
-On first run: a browser window opens for Google OAuth — authorize it, then the app continues starting.
-
-### 5. Run the Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Frontend starts on `http://localhost:5173`
-
----
-
-## Environment Variables (.env.example)
-
-```properties
-# Database
-spring.datasource.url=jdbc:postgresql://localhost:5432/healthdb
-spring.datasource.username=postgres
-spring.datasource.password=YOUR_POSTGRES_PASSWORD
-
-# JPA
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-
-# Server
-server.port=8081
-
-# Groq AI
-groq.api.key=YOUR_GROQ_API_KEY
-groq.api.url=https://api.groq.com/openai/v1/chat/completions
-groq.model=llama-3.3-70b-versatile
-
-# Brevo Email
-brevo.api.key=YOUR_BREVO_API_KEY
-brevo.from.email=YOUR_VERIFIED_EMAIL
-brevo.from.name=Healthcare App
-
-# Google Calendar
-google.calendar.credentials.path=src/main/resources/credentials.json
-google.calendar.tokens.path=tokens
-```
+### 4. Frontend Setup
+1. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the Vite development server:
+   ```bash
+   npm run dev
+   ```
+   Frontend will start at `http://localhost:5173`.
 
 ---
 
-## API Documentation
+## 📡 API Reference
 
-### Auth
+### Authentication (`/api/auth`)
+| Method | Endpoint | Description | Access |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/register` | Register a new user (`PATIENT`, `DOCTOR`, `ADMIN`) | Public |
+| `POST` | `/api/auth/login` | Authenticate credentials and return JWT token | Public |
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | /api/auth/register | Register new user | No |
-| POST | /api/auth/login | Login and get JWT token | No |
+### Doctors & Scheduling (`/api/doctors`, `/api/admin/doctors`)
+| Method | Endpoint | Description | Access |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/doctors` | List doctors, filterable by `?specialization=` | Authenticated |
+| `GET` | `/api/doctors/{id}/slots?date=YYYY-MM-DD` | Get available 30-min slots for a specific date | Authenticated |
+| `POST` | `/api/admin/doctors` | Create doctor profile with working hours | `ADMIN` |
+| `POST` | `/api/admin/doctors/{id}/leave` | Register doctor leave date | `ADMIN` / `DOCTOR` |
 
-**Register Request:**
-```json
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "secret123",
-  "role": "PATIENT"
-}
-```
-
-**Login Request:**
-```json
-{
-  "email": "john@example.com",
-  "password": "secret123"
-}
-```
-
-**Login Response:**
-```json
-{
-  "token": "eyJhbGciOiJIUzM4NCJ9..."
-}
-```
-
-All protected endpoints require: `Authorization: Bearer <token>`
+### Appointments (`/api/appointments`)
+| Method | Endpoint | Description | Access |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/appointments/book` | Book slot, trigger AI triage, Calendar & Email sync | `PATIENT` |
+| `GET` | `/api/appointments/patient/{id}` | Retrieve patient appointment history | `PATIENT` |
+| `GET` | `/api/appointments/doctor/{id}` | Retrieve doctor appointment queue with AI triage | `DOCTOR` |
+| `PUT` | `/api/appointments/{id}/cancel` | Cancel appointment and notify both parties | Authenticated |
+| `PUT` | `/api/appointments/{id}/notes` | Submit doctor notes & trigger AI post-visit summary | `DOCTOR` |
 
 ---
 
-### Doctors
+## 💡 Engineering Highlights & Problem Solving
 
-| Method | Endpoint | Description | Role |
-|--------|----------|-------------|------|
-| POST | /api/admin/doctors | Create doctor profile | ADMIN |
-| GET | /api/doctors?specialization= | Search doctors | Any |
-| GET | /api/doctors/{id}/slots?date= | Get available slots | Any |
-| POST | /api/admin/doctors/{id}/leave | Mark doctor leave day | ADMIN |
+1. **Resilient Google Calendar Synchronization**:
+   Standard Google Cloud Service Accounts cannot invite external attendees without Google Workspace Domain-Wide Delegation (returning `403 Forbidden`). Our `CalenderService` implements an automatic fallback mechanism: if attendee invitation is restricted, it seamlessly injects the event directly into the target calendar with patient details embedded in the title and description, ensuring zero downtime.
 
-**Create Doctor Request:**
-```json
-{
-  "user": { "id": 2 },
-  "specialization": "Cardiology",
-  "workingHoursStart": "09:00",
-  "workingHoursEnd": "17:00",
-  "slotDurationMinutes": 30,
-  "leaveDays": []
-}
-```
+2. **Fault-Tolerant AI Triage Chain**:
+   To prevent single-point-of-failure issues caused by cloud LLM deprecations or rate limits, `AiService` incorporates an automated candidate fallback chain (`openai/gpt-oss-20b` $\rightarrow$ `openai/gpt-oss-120b` $\rightarrow$ `qwen/qwen3.8-27b`). If a model is deprecated or unreachable, the system automatically switches models without failing the booking.
 
-**Get Slots Response:**
-```json
-["09:00:00", "09:30:00", "10:00:00", "10:30:00"]
-```
+3. **Double-Booking Prevention at Database Level**:
+   Concurrency conflicts are guarded against by combining Spring JPA transactional checks with a PostgreSQL partial unique index:
+   ```sql
+   CREATE UNIQUE INDEX uq_doctor_slot_active
+   ON appointment (doctor_id, appointment_date, appointment_time)
+   WHERE status <> 'CANCELLED';
+   ```
+   This guarantees that even under simultaneous concurrent booking requests, double-booking is physically impossible at the database engine level.
 
 ---
 
-### Appointments
+## 📄 License
 
-| Method | Endpoint | Description | Role |
-|--------|----------|-------------|------|
-| POST | /api/appointments/book | Book appointment | PATIENT |
-| GET | /api/appointments/patient/{id} | Get patient appointments | PATIENT |
-| GET | /api/appointments/doctor/{id} | Get doctor appointments | DOCTOR |
-| PUT | /api/appointments/{id}/cancel | Cancel appointment | Any |
-| PUT | /api/appointments/{id}/notes | Submit doctor notes | DOCTOR |
-| POST | /api/appointments/{id}/prescription | Add prescription | DOCTOR |
-
-**Book Appointment Request:**
-```json
-{
-  "patient": { "id": 1 },
-  "doctor": { "id": 1 },
-  "appointmentDate": "2026-07-10",
-  "appointmentTime": "09:00",
-  "symptoms": "Chest pain and shortness of breath for 3 days"
-}
-```
-
-**Book Appointment Response:**
-```json
-{
-  "id": 1,
-  "appointmentDate": "2026-07-10",
-  "appointmentTime": "09:00:00",
-  "status": "CONFIRMED",
-  "symptoms": "Chest pain and shortness of breath for 3 days",
-  "preVisitSummary": "Urgency Level: High\nChief Complaint: Chest pain...",
-  "calendarEventId": "abc123xyz"
-}
-```
-
----
-
-## Database Schema
-
-```
-users
-├── id (BIGSERIAL PK)
-├── name (VARCHAR)
-├── email (VARCHAR UNIQUE NOT NULL)
-├── password (VARCHAR - BCrypt hashed)
-└── role (VARCHAR - PATIENT/DOCTOR/ADMIN)
-
-doctor
-├── id (BIGSERIAL PK)
-├── user_id (FK → users.id)
-├── specialization (VARCHAR)
-├── working_hours_start (VARCHAR)
-├── working_hours_end (VARCHAR)
-└── slot_duration_minutes (INT)
-
-doctor_leave_days
-├── doctor_id (FK → doctor.id)
-└── leave_days (DATE)
-
-appointment
-├── id (BIGSERIAL PK)
-├── patient_id (FK → users.id)
-├── doctor_id (FK → doctor.id)
-├── appointment_date (DATE)
-├── appointment_time (TIME)
-├── status (VARCHAR - PENDING/CONFIRMED/CANCELLED)
-├── symptoms (TEXT)
-├── doctor_notes (TEXT)
-├── pre_visit_summary (TEXT)
-├── post_visit_summary (TEXT)
-└── calendar_event_id (VARCHAR)
-
-prescription
-├── id (BIGSERIAL PK)
-├── appointment_id (FK → appointment.id)
-├── medication_name (VARCHAR)
-├── frequency_per_day (INT)
-├── duration_days (INT)
-└── instructions (VARCHAR)
-
-Unique Index:
-  uq_doctor_slot_active ON appointment(doctor_id, appointment_date, appointment_time)
-  WHERE status <> 'CANCELLED'
-```
-
----
-
-## LLM Prompts
-
-### Pre-Visit Summary (sent to Groq on booking)
-
-```
-You are an experienced physician.
-
-Analyze these symptoms and provide:
-1. Urgency Level (Low/Medium/High)
-2. Chief Complaint
-3. Three questions the doctor should ask.
-
-Symptoms: <patient_symptoms>
-```
-
-### Post-Visit Summary (sent to Groq when doctor submits notes)
-
-```
-You are a medical assistant.
-
-Convert these doctor's notes into patient-friendly language.
-
-Include:
-1. Diagnosis
-2. Medication Schedule
-3. Lifestyle Advice
-4. Follow-up Instructions
-
-Doctor Notes: <doctor_notes>
-```
-
-Both prompts are wrapped in try/catch — if Groq is unavailable, the system stores "Pre-visit summary unavailable" or "Post-visit summary unavailable" and continues normally without crashing.
-
----
-
-## Deployment
-
-- Backend: Render (render.com) — deploy as a Web Service from GitHub
-- Frontend: Vercel (vercel.com) — deploy from the frontend folder
-
-Update `frontend/src/services/api.js` baseURL to your Render backend URL before deploying frontend.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
