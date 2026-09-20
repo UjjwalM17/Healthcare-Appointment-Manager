@@ -16,7 +16,7 @@ export default function Login({ onLogin }) {
             localStorage.setItem('token', res.data.token)
             onLogin(res.data.token)
         } catch (e) {
-            setError('Invalid email or password')
+            setError(e.response?.data || 'Login failed. Please check your credentials or network connection.')
         } finally {
             setLoading(false)
         }
