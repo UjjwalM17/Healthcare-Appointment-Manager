@@ -82,9 +82,15 @@ public class AiService {
         try {
             return callGroq(prompt);
 
+        } catch (org.springframework.web.client.RestClientResponseException ex) {
+            System.err.println(
+                    "Groq API error [" + ex.getStatusCode() + "]: " + ex.getResponseBodyAsString()
+            );
+            return fallback;
+
         } catch (RestClientException ex) {
             System.err.println(
-                    "Groq API error: " + ex.getMessage()
+                    "Groq REST error: " + ex.getMessage()
             );
             return fallback;
 
@@ -97,6 +103,7 @@ public class AiService {
     }
 
     private String callGroq(String prompt) {
+        System.out.println("Calling Groq API at [" + apiUrl + "] with model: [" + model + "]");
 
         GroqRequest request = new GroqRequest(
                 model,

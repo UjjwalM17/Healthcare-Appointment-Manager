@@ -35,7 +35,5 @@ build/
 
 
 
-application.properties
-
 credentials.json
 target/

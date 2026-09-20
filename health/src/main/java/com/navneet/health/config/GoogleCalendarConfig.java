@@ -43,7 +43,7 @@ public class GoogleCalendarConfig {
             Collections.singletonList(CalendarScopes.CALENDAR);
 
     @Bean
-    @ConditionalOnProperty(name = "google.calendar.enabled", havingValue = "true", matchIfMissing = false)
+    @ConditionalOnProperty(name = "google.calendar.enabled", havingValue = "true", matchIfMissing = true)
     public Calendar googleCalendarService()
             throws GeneralSecurityException, IOException {
 
@@ -85,6 +85,9 @@ public class GoogleCalendarConfig {
 
     private InputStream credentialsStream() throws IOException {
         String envJson = System.getenv("GOOGLE_CALENDAR_CREDENTIALS");
+        if (envJson == null || envJson.isBlank()) {
+            envJson = System.getenv("GOOGLE_CREDENTIALS_JSON");
+        }
         if (envJson != null && !envJson.isBlank()) {
             return new ByteArrayInputStream(envJson.getBytes(StandardCharsets.UTF_8));
         }
