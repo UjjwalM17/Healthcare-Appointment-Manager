@@ -36,6 +36,7 @@ public class CalenderService {
     public String createCalendarEvent(String patientEmail,
                                       String doctorEmail,
                                       String title,
+                                      String description,
                                       LocalDate date,
                                       LocalTime startTime,
                                       LocalTime endTime) {
@@ -47,9 +48,13 @@ public class CalenderService {
             ZonedDateTime start = ZonedDateTime.of(date, startTime, ZoneId.systemDefault());
             ZonedDateTime end = ZonedDateTime.of(date, endTime, ZoneId.systemDefault());
 
+            String desc = (description != null && !description.isBlank())
+                    ? description
+                    : "Healthcare appointment between " + patientEmail + " and " + doctorEmail;
+
             Event event = new Event()
                     .setSummary(title)
-                    .setDescription("Healthcare appointment between " + patientEmail + " and " + doctorEmail);
+                    .setDescription(desc);
 
             event.setStart(new EventDateTime()
                     .setDateTime(new DateTime(start.toInstant().toEpochMilli()))
@@ -110,6 +115,15 @@ public class CalenderService {
             log.error("Calendar event creation failed completely: {}", e.getMessage(), e);
             return null;
         }
+    }
+
+    public String createCalendarEvent(String patientEmail,
+                                      String doctorEmail,
+                                      String title,
+                                      LocalDate date,
+                                      LocalTime startTime,
+                                      LocalTime endTime) {
+        return createCalendarEvent(patientEmail, doctorEmail, title, null, date, startTime, endTime);
     }
 
     public void deleteCalendarEvent(String eventId) {

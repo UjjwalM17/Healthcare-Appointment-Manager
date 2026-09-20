@@ -90,10 +90,27 @@ public class AppointmentService {
         }
 
         try {
+            String doctorName = doctor.getUser().getName();
+            if (!doctorName.toLowerCase().startsWith("dr.") && !doctorName.toLowerCase().startsWith("dr ")) {
+                doctorName = "Dr. " + doctorName;
+            }
+
+            String eventTitle = "Appointment: " + patient.getName() + " (" + patient.getEmail() + ") with " + doctorName;
+
+            String eventDescription = "Healthcare Appointment Details:\n"
+                    + "• Patient: " + patient.getName() + " (" + patient.getEmail() + ")\n"
+                    + "• Doctor: " + doctorName + " (" + doctor.getUser().getEmail() + ")\n"
+                    + "• Date: " + savedAppointment.getAppointmentDate() + "\n"
+                    + "• Time: " + savedAppointment.getAppointmentTime() + "\n"
+                    + (savedAppointment.getSymptoms() != null && !savedAppointment.getSymptoms().isBlank()
+                        ? "• Symptoms: " + savedAppointment.getSymptoms() + "\n"
+                        : "");
+
             String eventId = calenderService.createCalendarEvent(
                     patient.getEmail(),
                     doctor.getUser().getEmail(),
-                    "Appointment with Dr. " + doctor.getUser().getName(),
+                    eventTitle,
+                    eventDescription,
                     savedAppointment.getAppointmentDate(),
                     savedAppointment.getAppointmentTime(),
                     savedAppointment.getAppointmentTime()
