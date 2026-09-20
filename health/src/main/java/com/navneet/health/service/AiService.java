@@ -105,20 +105,35 @@ public class AiService {
 
     public String callGroq(String prompt) {
         String trimmedKey = apiKey != null ? apiKey.trim() : "";
-        String trimmedModel = (model != null && !model.trim().isBlank()) ? model.trim() : "llama-3.1-8b-instant";
+        String trimmedModel = (model != null && !model.trim().isBlank()) ? model.trim() : "openai/gpt-oss-20b";
         String trimmedUrl = (apiUrl != null && !apiUrl.trim().isBlank()) ? apiUrl.trim() : "https://api.groq.com/openai/v1/chat/completions";
 
-        log.info("Calling Groq API at [{}] with model: [{}]", trimmedUrl, trimmedModel);
+        String[] candidateModels = {
+                trimmedModel,
+                "openai/gpt-oss-20b",
+                "openai/gpt-oss-120b",
+                "qwen/qwen3.8-27b",
+                "llama-3.1-8b-instant"
+        };
 
-        try {
-            return executeGroqCall(trimmedUrl, trimmedKey, trimmedModel, prompt);
-        } catch (RestClientResponseException ex) {
-            if (ex.getStatusCode().value() == 404 || (ex.getResponseBodyAsString() != null && ex.getResponseBodyAsString().contains("model_not_found"))) {
-                log.warn("Model '{}' not found or access restricted. Retrying with 'llama-3.1-8b-instant'...", trimmedModel);
-                return executeGroqCall(trimmedUrl, trimmedKey, "llama-3.1-8b-instant", prompt);
+        RestClientResponseException lastEx = null;
+        for (String candidate : candidateModels) {
+            try {
+                log.info("Calling Groq API at [{}] with model: [{}]", trimmedUrl, candidate);
+                return executeGroqCall(trimmedUrl, trimmedKey, candidate, prompt);
+            } catch (RestClientResponseException ex) {
+                lastEx = ex;
+                if (ex.getStatusCode().value() == 404 || (ex.getResponseBodyAsString() != null && ex.getResponseBodyAsString().contains("model_not_found"))) {
+                    log.warn("Model '{}' returned 404 model_not_found. Trying next candidate...", candidate);
+                    continue;
+                }
+                throw ex;
             }
-            throw ex;
         }
+        if (lastEx != null) {
+            throw lastEx;
+        }
+        throw new RuntimeException("All candidate Groq models failed.");
     }
 
     private String executeGroqCall(String url, String key, String modelName, String prompt) {
