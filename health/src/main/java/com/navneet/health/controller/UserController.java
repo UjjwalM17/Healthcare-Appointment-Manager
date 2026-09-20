@@ -1,6 +1,7 @@
 package com.navneet.health.controller;
 
 import com.navneet.health.entity.User;
+import com.navneet.health.service.EmailService;
 import com.navneet.health.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
