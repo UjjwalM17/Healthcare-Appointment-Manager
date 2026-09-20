@@ -2,6 +2,7 @@ package com.navneet.health.controller;
 
 import com.navneet.health.entity.User;
 import com.navneet.health.service.AiService;
+import com.navneet.health.service.CalenderService;
 import com.navneet.health.service.EmailService;
 import com.navneet.health.service.UserService;
 import jakarta.validation.Valid;
@@ -19,6 +20,17 @@ public class UserController {
     private final UserService userService;
     private final EmailService emailService;
     private final AiService aiService;
+    private final CalenderService calenderService;
+
+    @GetMapping("/test-calendar")
+    public ResponseEntity<?> testCalendar(@RequestParam(required = false) String calendarId) {
+        var result = calenderService.testCalendarIntegration(calendarId);
+        if (Boolean.TRUE.equals(result.get("success"))) {
+            return ResponseEntity.ok(result);
+        } else {
+            return ResponseEntity.badRequest().body(result);
+        }
+    }
 
     @GetMapping("/test-ai")
     public ResponseEntity<?> testAi(@RequestParam(defaultValue = "fever, severe headache, and tiredness for 2 days") String symptoms) {

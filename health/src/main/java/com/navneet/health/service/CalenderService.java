@@ -126,4 +126,62 @@ public class CalenderService {
             log.error("Calendar deletion failed for event ID {}: {}", eventId, e.getMessage(), e);
         }
     }
+
+    public java.util.Map<String, Object> testCalendarIntegration(String customCalendarId) {
+        if (googleCalendarService.isEmpty()) {
+            return java.util.Map.of("success", false, "error", "Google Calendar service bean is not initialized.");
+        }
+
+        String targetCalendarId = (customCalendarId != null && !customCalendarId.isBlank())
+                ? customCalendarId.trim()
+                : ((configuredCalendarId != null && !configuredCalendarId.isBlank()) ? configuredCalendarId.trim() : "primary");
+
+        log.info("Testing Google Calendar integration with targetCalendarId: '{}'", targetCalendarId);
+
+        try {
+            // 1. Check calendar metadata and permissions
+            var calendarMeta = googleCalendarService.get().calendars().get(targetCalendarId).execute();
+            log.info("Calendar verified: summary='{}', timeZone='{}'", calendarMeta.getSummary(), calendarMeta.getTimeZone());
+
+            // 2. Create a test event for today
+            ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
+            ZonedDateTime start = now.plusHours(1);
+            ZonedDateTime end = start.plusMinutes(30);
+
+            Event event = new Event()
+                    .setSummary("Healthcare App Test Appointment")
+                    .setDescription("Verification appointment created by Healthcare App.");
+
+            event.setStart(new EventDateTime()
+                    .setDateTime(new DateTime(start.toInstant().toEpochMilli()))
+                    .setTimeZone(ZoneId.systemDefault().getId()));
+
+            event.setEnd(new EventDateTime()
+                    .setDateTime(new DateTime(end.toInstant().toEpochMilli()))
+                    .setTimeZone(ZoneId.systemDefault().getId()));
+
+            Event created = googleCalendarService.get().events()
+                    .insert(targetCalendarId, event)
+                    .execute();
+
+            log.info("Test calendar event created successfully! ID: {}, Link: {}", created.getId(), created.getHtmlLink());
+
+            return java.util.Map.of(
+                    "success", true,
+                    "targetCalendarId", targetCalendarId,
+                    "calendarSummary", calendarMeta.getSummary() != null ? calendarMeta.getSummary() : "",
+                    "eventId", created.getId(),
+                    "htmlLink", created.getHtmlLink() != null ? created.getHtmlLink() : "",
+                    "time", start.toString()
+            );
+
+        } catch (Exception e) {
+            log.error("Calendar test failed for calendar '{}': {}", targetCalendarId, e.getMessage(), e);
+            return java.util.Map.of(
+                    "success", false,
+                    "targetCalendarId", targetCalendarId,
+                    "error", e.getMessage() != null ? e.getMessage() : e.toString()
+            );
+        }
+    }
 }

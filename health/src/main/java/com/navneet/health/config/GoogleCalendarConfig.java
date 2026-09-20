@@ -58,9 +58,9 @@ public class GoogleCalendarConfig {
 
         // Check if this is a Service Account key
         if (jsonStr.contains("\"type\"") && jsonStr.contains("\"service_account\"")) {
-            log.info("Initializing Google Calendar with Service Account credentials");
             GoogleCredential credential = GoogleCredential.fromStream(new ByteArrayInputStream(credBytes))
                     .createScoped(SCOPES);
+            log.info("Initializing Google Calendar with Service Account: {}", credential.getServiceAccountId());
             return new Calendar.Builder(httpTransport, jsonFactory, credential)
                     .setApplicationName("Healthcare App")
                     .build();
