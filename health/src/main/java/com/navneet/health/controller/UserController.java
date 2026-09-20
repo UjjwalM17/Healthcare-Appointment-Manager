@@ -1,6 +1,7 @@
 package com.navneet.health.controller;
 
 import com.navneet.health.entity.User;
+import com.navneet.health.service.AiService;
 import com.navneet.health.service.EmailService;
 import com.navneet.health.service.UserService;
 import jakarta.validation.Valid;
@@ -17,6 +18,24 @@ public class UserController {
 
     private final UserService userService;
     private final EmailService emailService;
+    private final AiService aiService;
+
+    @GetMapping("/test-ai")
+    public ResponseEntity<?> testAi(@RequestParam(defaultValue = "fever, severe headache, and tiredness for 2 days") String symptoms) {
+        try {
+            String summary = aiService.generatePreVisitSummary(symptoms);
+            return ResponseEntity.ok(java.util.Map.of(
+                    "success", !summary.equals("Pre-visit summary unavailable."),
+                    "symptoms", symptoms,
+                    "summary", summary
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of(
+                    "success", false,
+                    "error", e.getMessage()
+            ));
+        }
+    }
 
     @GetMapping("/test-email")
     public ResponseEntity<?> testEmail(@RequestParam String to) {

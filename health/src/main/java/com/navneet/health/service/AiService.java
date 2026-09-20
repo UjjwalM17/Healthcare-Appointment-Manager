@@ -4,30 +4,34 @@ import com.navneet.health.dto.groq.Choice;
 import com.navneet.health.dto.groq.GroqRequest;
 import com.navneet.health.dto.groq.GroqResponse;
 import com.navneet.health.dto.groq.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.util.List;
 
 @Service
 public class AiService {
 
-    @Value("${groq.api.key}")
+    private static final Logger log = LoggerFactory.getLogger(AiService.class);
+
+    @Value("${groq.api.key:}")
     private String apiKey;
 
-    @Value("${groq.api.url}")
+    @Value("${groq.api.url:https://api.groq.com/openai/v1/chat/completions}")
     private String apiUrl;
 
-    @Value("${groq.model}")
+    @Value("${groq.model:llama-3.3-70b-versatile}")
     private String model;
 
     private final RestClient restClient =
             RestClient.builder().build();
 
     public String generatePreVisitSummary(String symptoms) {
-
         String prompt = """
                 You are an experienced physician.
 
@@ -50,7 +54,6 @@ public class AiService {
     }
 
     public String generatePostVisitSummary(String doctorNotes) {
-
         String prompt = """
                 You are a medical assistant.
 
@@ -77,36 +80,38 @@ public class AiService {
         );
     }
 
-    private String generate(String prompt, String fallback) {
+    public String generate(String prompt, String fallback) {
+        if (apiKey == null || apiKey.trim().isBlank()) {
+            log.warn("Groq AI skipped: GROQ_API_KEY is not configured.");
+            return fallback;
+        }
 
         try {
             return callGroq(prompt);
 
-        } catch (org.springframework.web.client.RestClientResponseException ex) {
-            System.err.println(
-                    "Groq API error [" + ex.getStatusCode() + "]: " + ex.getResponseBodyAsString()
-            );
+        } catch (RestClientResponseException ex) {
+            log.error("Groq API error [HTTP {}]: {}", ex.getStatusCode(), ex.getResponseBodyAsString());
             return fallback;
 
         } catch (RestClientException ex) {
-            System.err.println(
-                    "Groq REST error: " + ex.getMessage()
-            );
+            log.error("Groq REST client error: {}", ex.getMessage(), ex);
             return fallback;
 
         } catch (Exception ex) {
-            System.err.println(
-                    "AI generation error: " + ex.getMessage()
-            );
+            log.error("AI generation unexpected error: {}", ex.getMessage(), ex);
             return fallback;
         }
     }
 
-    private String callGroq(String prompt) {
-        System.out.println("Calling Groq API at [" + apiUrl + "] with model: [" + model + "]");
+    public String callGroq(String prompt) {
+        String trimmedKey = apiKey != null ? apiKey.trim() : "";
+        String trimmedModel = (model != null && !model.trim().isBlank()) ? model.trim() : "llama-3.3-70b-versatile";
+        String trimmedUrl = (apiUrl != null && !apiUrl.trim().isBlank()) ? apiUrl.trim() : "https://api.groq.com/openai/v1/chat/completions";
+
+        log.info("Calling Groq API at [{}] with model: [{}]", trimmedUrl, trimmedModel);
 
         GroqRequest request = new GroqRequest(
-                model,
+                trimmedModel,
                 List.of(
                         new Message(
                                 "user",
@@ -118,10 +123,10 @@ public class AiService {
 
         GroqResponse response =
                 restClient.post()
-                        .uri(apiUrl)
+                        .uri(trimmedUrl)
                         .header(
                                 "Authorization",
-                                "Bearer " + apiKey
+                                "Bearer " + trimmedKey
                         )
                         .header(
                                 "Content-Type",
