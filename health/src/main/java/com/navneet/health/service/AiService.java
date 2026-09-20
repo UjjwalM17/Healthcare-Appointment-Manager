@@ -105,13 +105,25 @@ public class AiService {
 
     public String callGroq(String prompt) {
         String trimmedKey = apiKey != null ? apiKey.trim() : "";
-        String trimmedModel = (model != null && !model.trim().isBlank()) ? model.trim() : "llama-3.3-70b-versatile";
+        String trimmedModel = (model != null && !model.trim().isBlank()) ? model.trim() : "llama-3.1-8b-instant";
         String trimmedUrl = (apiUrl != null && !apiUrl.trim().isBlank()) ? apiUrl.trim() : "https://api.groq.com/openai/v1/chat/completions";
 
         log.info("Calling Groq API at [{}] with model: [{}]", trimmedUrl, trimmedModel);
 
+        try {
+            return executeGroqCall(trimmedUrl, trimmedKey, trimmedModel, prompt);
+        } catch (RestClientResponseException ex) {
+            if (ex.getStatusCode().value() == 404 || (ex.getResponseBodyAsString() != null && ex.getResponseBodyAsString().contains("model_not_found"))) {
+                log.warn("Model '{}' not found or access restricted. Retrying with 'llama-3.1-8b-instant'...", trimmedModel);
+                return executeGroqCall(trimmedUrl, trimmedKey, "llama-3.1-8b-instant", prompt);
+            }
+            throw ex;
+        }
+    }
+
+    private String executeGroqCall(String url, String key, String modelName, String prompt) {
         GroqRequest request = new GroqRequest(
-                trimmedModel,
+                modelName,
                 List.of(
                         new Message(
                                 "user",
@@ -123,10 +135,10 @@ public class AiService {
 
         GroqResponse response =
                 restClient.post()
-                        .uri(trimmedUrl)
+                        .uri(url)
                         .header(
                                 "Authorization",
-                                "Bearer " + trimmedKey
+                                "Bearer " + key
                         )
                         .header(
                                 "Content-Type",
