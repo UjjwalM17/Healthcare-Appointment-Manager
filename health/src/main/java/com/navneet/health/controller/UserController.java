@@ -15,6 +15,34 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final EmailService emailService;
+
+    @GetMapping("/test-email")
+    public ResponseEntity<?> testEmail(@RequestParam String to) {
+        try {
+            boolean success = emailService.sendEmail(
+                    to,
+                    "Healthcare App - Test Email",
+                    "Hello!\n\nThis is a test email to verify your Brevo email configuration.\nIf you received this, Brevo is working perfectly!"
+            );
+            if (success) {
+                return ResponseEntity.ok(java.util.Map.of(
+                        "success", true,
+                        "message", "Test email sent successfully to " + to
+                ));
+            } else {
+                return ResponseEntity.badRequest().body(java.util.Map.of(
+                        "success", false,
+                        "message", "Failed to send email. Check Render server logs for exact error details from Brevo."
+                ));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of(
+                    "success", false,
+                    "error", e.getMessage()
+            ));
+        }
+    }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody User user) {
